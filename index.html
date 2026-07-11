@@ -1,0 +1,392 @@
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flashcards — Information dentaire</title>
+<style>
+  :root {
+    --ink: #16302c;
+    --ink-soft: #4b615d;
+    --paper: #faf9f6;
+    --panel: #ffffff;
+    --line: #e2e0d8;
+    --accent: #1d5c52;
+    --accent-soft: #e7f0ee;
+    --facile: #2f8a5f;
+    --facile-bg: #eaf5ef;
+    --moyen: #b3791f;
+    --moyen-bg: #faf1e2;
+    --difficile: #c1503f;
+    --difficile-bg: #fbebe8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 40px 16px;
+  }
+  .wrap { width: 100%; max-width: 540px; }
+  header { margin-bottom: 28px; text-align: center; }
+  header .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  header h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 26px;
+    margin: 0 0 6px;
+    font-weight: 600;
+  }
+  header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 14px;
+  }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  .diff-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  .diff-tag.facile { background: var(--facile-bg); color: var(--facile); }
+  .diff-tag.moyen { background: var(--moyen-bg); color: var(--moyen); }
+  .diff-tag.difficile { background: var(--difficile-bg); color: var(--difficile); }
+  .diff-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  .progress-track {
+    height: 4px;
+    background: var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  .scene { perspective: 1400px; margin-bottom: 18px; }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    min-height: 240px;
+    transition: transform 0.5s cubic-bezier(.2,.7,.3,1);
+    transform-style: preserve-3d;
+    cursor: pointer;
+  }
+  .face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: 14px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-left: 5px solid var(--accent);
+  }
+  .face-front {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--accent);
+    box-shadow: 0 1px 3px rgba(22,48,44,0.06);
+  }
+  .face-back {
+    background: var(--accent-soft);
+    border: 1px solid var(--line);
+    border-left: 5px solid var(--accent);
+    transform: rotateY(180deg);
+  }
+  .face-front.facile, .face-back.facile { border-left-color: var(--facile); }
+  .face-front.moyen, .face-back.moyen { border-left-color: var(--moyen); }
+  .face-front.difficile, .face-back.difficile { border-left-color: var(--difficile); }
+
+  .face-label {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    font-weight: 600;
+  }
+  .face-text {
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 420px;
+  }
+  .face-back .face-text { font-size: 16px; }
+  .flip-hint {
+    position: absolute;
+    bottom: 14px;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+
+  .rating-row { display: none; gap: 8px; }
+  .rating-row button {
+    flex: 1;
+    padding: 11px 6px;
+    border-radius: 9px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .rating-row button:hover { transform: translateY(-1px); }
+  .rating-row button:active { transform: translateY(0); }
+  #btn-again { color: var(--difficile); }
+  #btn-hard { color: var(--moyen); }
+  #btn-good { color: var(--accent); }
+  #btn-easy { color: var(--facile); }
+
+  .done-panel { display: none; text-align: center; padding: 40px 0; }
+  .done-panel .check {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: var(--facile-bg); color: var(--facile);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 14px; font-size: 20px;
+  }
+  .done-panel p { margin: 4px 0; color: var(--ink-soft); font-size: 14px; }
+  .done-panel button {
+    margin-top: 14px;
+    padding: 10px 20px;
+    border-radius: 9px;
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  button:focus-visible, .card-inner:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-inner, .progress-fill, .rating-row button { transition: none !important; }
+  }
+
+  @media (max-width: 420px) {
+    .face-text { font-size: 15.5px; }
+    .rating-row { flex-wrap: wrap; }
+    .rating-row button { flex-basis: 47%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow" id="deck-eyebrow">Révision espacée</div>
+    <h1 id="deck-title">Titre du deck</h1>
+    <p id="deck-subtitle">Sous-titre / source</p>
+  </header>
+
+  <div class="meta-row">
+    <span id="card-count">Carte 1 / 1</span>
+    <span id="diff-tag" class="diff-tag facile"><span class="diff-dot"></span><span id="diff-label">Facile</span></span>
+  </div>
+
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+
+  <div class="scene">
+    <div class="card-inner" id="card-inner" tabindex="0" role="button" aria-label="Cliquer pour retourner la carte">
+      <div class="face face-front" id="face-front">
+        <span class="face-label">Question</span>
+        <p class="face-text" id="q-text">Chargement…</p>
+        <span class="flip-hint">Cliquer pour retourner</span>
+      </div>
+      <div class="face face-back" id="face-back">
+        <span class="face-label" style="color:var(--accent)">Réponse</span>
+        <p class="face-text" id="a-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="rating-row" id="rating-row">
+    <button id="btn-again">À revoir</button>
+    <button id="btn-hard">Difficile</button>
+    <button id="btn-good">Correct</button>
+    <button id="btn-easy">Facile</button>
+  </div>
+
+  <div class="done-panel" id="done-panel">
+    <div class="check">✓</div>
+    <p>Série terminée</p>
+    <p id="done-sub"></p>
+    <button id="btn-restart">Recommencer</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURATION — à modifier pour chaque nouveau thème
+   ============================================================ */
+
+// Identifiant unique de ce deck (change la clé de sauvegarde locale)
+// IMPORTANT : donnez un nom différent à chaque nouveau fichier dupliqué
+const DECK_ID = "deck-modele";
+
+// Textes affichés en haut de la page
+const DECK_TITLE = "Nom de la conférence ou du thème";
+const DECK_SUBTITLE = "Source : nom de l'article ou de l'intervention";
+
+// Liste des cartes. Dupliquez une ligne pour en ajouter une.
+// difficulty : 'facile' | 'moyen' | 'difficile'
+const CARDS = [
+  { id:'m1', q:"Quel était l'objectif de cette revue systématique et méta-analyse ?", a:"Comparer l'adaptation marginale des restaurations partielles indirectes (inlays, onlays, facettes, endocouronnes) fabriquées par fraisage versus impression 3D.", difficulty:'facile' },
+  { id:'m2', q:"Combien d'études et d'échantillons ont été inclus dans la méta-analyse ?", a:"16 études, comprenant 257 échantillons fraisés et 287 échantillons imprimés en 3D.", difficulty:'facile' },
+  { id:'m3', q:"Quel est le résultat de l'analyse poolée globale sur le hiatus marginal ?", a:"Aucune différence statistiquement significative entre fraisage et impression 3D (p = 0,62).", difficulty:'moyen' },
+  { id:'m4', q:"Pour les facettes occlusales, quelle technique montrait le plus petit hiatus marginal ?", a:"Le fraisage, mais la différence n'était pas statistiquement significative (SMD = -1,86 ; p = 0,39), avec une hétérogénéité extrême (I² = 95 %).", difficulty:'moyen' },
+  { id:'m5', q:"Pour les inlays et onlays, quelle tendance a été observée ?", a:"Une tendance non significative en faveur de l'impression 3D (SMD = 0,87 ; IC95 % : -0,26 à 2,00 ; p = 0,11).", difficulty:'moyen' },
+  { id:'m6', q:"Quelle plage de hiatus marginal est généralement considérée comme cliniquement acceptable ?", a:"Entre 50 et 120 µm selon la littérature, certaines études étendant cette plage jusqu'à 150, voire 200 µm.", difficulty:'facile' },
+  { id:'m7', q:"Quelles méthodes sont utilisées pour évaluer le hiatus marginal ?", a:"Stéréomicroscopie, CBCT, microscopie électronique à balayage, microscopie optique et projecteurs de profil.", difficulty:'facile' },
+  { id:'m8', q:"Quelles complications sont associées à un mauvais ajustement marginal ?", a:"Dégradation du ciment, micro-infiltration, carie secondaire et problèmes parodontaux.", difficulty:'facile' },
+  { id:'m9', q:"Quelle est la différence entre un inlay et un onlay ?", a:"L'onlay recouvre une ou plusieurs cuspides, contrairement à l'inlay ; les deux restaurent des cavités de classe I et II.", difficulty:'facile' },
+  { id:'m10', q:"Quel outil a été utilisé pour évaluer le risque de biais des études incluses ?", a:"Le QUIN (Quality Assessment Tool for In Vitro Studies in Dentistry), qui comporte 12 critères.", difficulty:'moyen' },
+  { id:'m11', q:"Quelle méthode statistique a été utilisée pour synthétiser les résultats ?", a:"La différence moyenne standardisée (SMD) avec IC à 95 %, via un modèle à effets aléatoires et la méthode Hartung-Knapp-Sidik-Jonkman.", difficulty:'difficile' },
+  { id:'m12', q:"Combien d'études portaient sur les endocouronnes, et quel était le résultat ?", a:"Une seule étude, sans différence significative entre les deux méthodes de fabrication (p = 0,93).", difficulty:'facile' },
+  { id:'m13', q:"Quelle hétérogénéité a été observée dans le sous-groupe inlays/onlays ?", a:"Une hétérogénéité substantielle, avec I² = 92 %.", difficulty:'difficile' },
+  { id:'m14', q:"Le type de restauration influençait-il significativement le hiatus marginal entre les sous-groupes ?", a:"Non de façon statistiquement significative (p = 0,14), mais I² = 44,9 % suggère une contribution modérée du type de restauration à l'hétérogénéité globale.", difficulty:'difficile' },
+  { id:'m15', q:"Quelles techniques de fabrication additive sont mentionnées dans l'article ?", a:"La stéréolithographie (SLA), le traitement numérique de la lumière (DLP) et le frittage ou fusion laser sélectif (SLS/SLM).", difficulty:'moyen' },
+  { id:'m16', q:"Quelle est la principale limite méthodologique de cette revue ?", a:"La forte hétérogénéité entre études et le fait que la majorité sont réalisées in vitro, sans reproduire les conditions intra-orales réelles.", difficulty:'moyen' }
+];
+
+/* ============================================================
+   MOTEUR — ne pas modifier à moins d'être à l'aise avec le code
+   ============================================================ */
+
+document.getElementById('deck-title').textContent = DECK_TITLE;
+document.getElementById('deck-subtitle').textContent = DECK_SUBTITLE;
+
+const DIFF_LABEL = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
+const STORAGE_KEY = 'flashcards-progress-' + DECK_ID;
+
+let order = [...CARDS.keys()];
+let pos = 0;
+let flipped = false;
+let progress = {};
+
+const inner = document.getElementById('card-inner');
+const faceFront = document.getElementById('face-front');
+const faceBack = document.getElementById('face-back');
+const qText = document.getElementById('q-text');
+const aText = document.getElementById('a-text');
+const ratingRow = document.getElementById('rating-row');
+const donePanel = document.getElementById('done-panel');
+const doneSub = document.getElementById('done-sub');
+const scene = document.querySelector('.scene');
+const cardCount = document.getElementById('card-count');
+const diffTag = document.getElementById('diff-tag');
+const diffLabel = document.getElementById('diff-label');
+const progressFill = document.getElementById('progress-fill');
+
+function loadProgress() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    progress = raw ? JSON.parse(raw) : {};
+  } catch (e) { progress = {}; }
+}
+function saveProgress() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(progress)); } catch (e) {}
+}
+
+function render() {
+  if (pos >= order.length) {
+    scene.style.display = 'none';
+    ratingRow.style.display = 'none';
+    document.querySelector('.meta-row').style.display = 'none';
+    donePanel.style.display = 'block';
+    doneSub.textContent = DECK_TITLE;
+    progressFill.style.width = '100%';
+    return;
+  }
+  const c = CARDS[order[pos]];
+  flipped = false;
+  inner.style.transform = 'rotateY(0deg)';
+  qText.textContent = c.q;
+  aText.textContent = c.a;
+  ratingRow.style.display = 'none';
+
+  faceFront.className = 'face face-front ' + c.difficulty;
+  faceBack.className = 'face face-back ' + c.difficulty;
+  diffTag.className = 'diff-tag ' + c.difficulty;
+  diffLabel.textContent = DIFF_LABEL[c.difficulty] || c.difficulty;
+
+  cardCount.textContent = 'Carte ' + (pos + 1) + ' / ' + order.length;
+  progressFill.style.width = Math.round((pos / order.length) * 100) + '%';
+}
+
+function toggleFlip() {
+  if (pos >= order.length) return;
+  flipped = !flipped;
+  inner.style.transform = flipped ? 'rotateY(180deg)' : 'rotateY(0deg)';
+  ratingRow.style.display = flipped ? 'flex' : 'none';
+}
+inner.addEventListener('click', toggleFlip);
+inner.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleFlip(); }
+});
+
+function rate(grade) {
+  const c = CARDS[order[pos]];
+  const p = progress[c.id] || { ease: 2.5, interval: 1 };
+  if (grade === 'again') { p.interval = 1; p.ease = Math.max(1.3, p.ease - 0.2); }
+  else if (grade === 'hard') { p.interval = Math.max(1, Math.round(p.interval * 1.2)); p.ease = Math.max(1.3, p.ease - 0.05); }
+  else if (grade === 'good') { p.interval = Math.round(p.interval * p.ease); }
+  else if (grade === 'easy') { p.interval = Math.round(p.interval * p.ease * 1.3); p.ease += 0.1; }
+  progress[c.id] = p;
+  saveProgress();
+  pos++;
+  render();
+}
+
+document.getElementById('btn-again').addEventListener('click', (e) => { e.stopPropagation(); rate('again'); });
+document.getElementById('btn-hard').addEventListener('click', (e) => { e.stopPropagation(); rate('hard'); });
+document.getElementById('btn-good').addEventListener('click', (e) => { e.stopPropagation(); rate('good'); });
+document.getElementById('btn-easy').addEventListener('click', (e) => { e.stopPropagation(); rate('easy'); });
+
+document.getElementById('btn-restart').addEventListener('click', () => {
+  pos = 0;
+  order = [...CARDS.keys()];
+  donePanel.style.display = 'none';
+  scene.style.display = 'block';
+  document.querySelector('.meta-row').style.display = 'flex';
+  render();
+});
+
+loadProgress();
+render();
+</script>
+</body>
+</html>

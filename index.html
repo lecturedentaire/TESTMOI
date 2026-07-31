@@ -143,6 +143,14 @@
     max-width: 420px;
   }
   .face-back .face-text { font-size: 16px; }
+  .face-img {
+    max-width: 100%;
+    max-height: 130px;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+  }
   .flip-hint {
     position: absolute;
     bottom: 14px;
@@ -224,11 +232,13 @@
       <div class="face face-front" id="face-front">
         <span class="face-label">Question</span>
         <p class="face-text" id="q-text">Chargement…</p>
+        <img class="face-img" id="q-img" src="" alt="">
         <span class="flip-hint">Cliquer pour retourner</span>
       </div>
       <div class="face face-back" id="face-back">
         <span class="face-label" style="color:var(--accent)">Réponse</span>
         <p class="face-text" id="a-text"></p>
+        <img class="face-img" id="a-img" src="" alt="">
       </div>
     </div>
   </div>
@@ -292,7 +302,15 @@ document.getElementById('deck-subtitle').textContent = DECK_SUBTITLE;
 const DIFF_LABEL = { facile: 'Facile', moyen: 'Moyen', difficile: 'Difficile' };
 const STORAGE_KEY = 'flashcards-progress-' + DECK_ID;
 
-let order = [...CARDS.keys()];
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+let order = shuffle([...CARDS.keys()]);
 let pos = 0;
 let flipped = false;
 let progress = {};
@@ -302,6 +320,8 @@ const faceFront = document.getElementById('face-front');
 const faceBack = document.getElementById('face-back');
 const qText = document.getElementById('q-text');
 const aText = document.getElementById('a-text');
+const qImg = document.getElementById('q-img');
+const aImg = document.getElementById('a-img');
 const ratingRow = document.getElementById('rating-row');
 const donePanel = document.getElementById('done-panel');
 const doneSub = document.getElementById('done-sub');
@@ -337,6 +357,18 @@ function render() {
   qText.textContent = c.q;
   aText.textContent = c.a;
   ratingRow.style.display = 'none';
+
+  if (c.img) {
+    qImg.src = c.img;
+    qImg.alt = c.q;
+    qImg.style.display = 'block';
+    aImg.src = c.img;
+    aImg.alt = c.q;
+    aImg.style.display = 'block';
+  } else {
+    qImg.style.display = 'none';
+    aImg.style.display = 'none';
+  }
 
   faceFront.className = 'face face-front ' + c.difficulty;
   faceBack.className = 'face face-back ' + c.difficulty;
@@ -378,7 +410,7 @@ document.getElementById('btn-easy').addEventListener('click', (e) => { e.stopPro
 
 document.getElementById('btn-restart').addEventListener('click', () => {
   pos = 0;
-  order = [...CARDS.keys()];
+  order = shuffle([...CARDS.keys()]);
   donePanel.style.display = 'none';
   scene.style.display = 'block';
   document.querySelector('.meta-row').style.display = 'flex';
